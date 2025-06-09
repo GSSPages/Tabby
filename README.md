@@ -1,2 +1,2 @@
-# Tabby
+# Tab Scribe
 For Tabby dev
