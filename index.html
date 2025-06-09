@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<meta name="theme-color" content="#222222">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(reg => console.log("Service Worker registered!", reg))
-      .catch(err => console.error("Service Worker failed", err));
-  }
-</script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <meta name="theme-color" content="#222222">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log("Service Worker registered!", reg))
+        .catch(err => console.error("Service Worker failed", err));
+    }
+  </script>
   <meta charset="UTF-8">
-  <title>TABBY</title>
+  <title>Tab Scribe</title>
   <style>
     body {
       font-family: monospace;
@@ -68,23 +68,60 @@
     .section-input {
       margin-top: 10px;
     }
+
+    /* Help modal styling */
+    #helpBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1.2em;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    #helpModal {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 600px;
+      background: white;
+      padding: 20px;
+      border: 1px solid #aaa;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .dark-mode #helpModal {
+      background: #333;
+      color: #eee;
+      border-color: #666;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Tabby</h1>
+  <button id="helpBtn">❓</button>
+
+  <header style="text-align: center; margin-top: 20px;">
+    <h1 style="font-family: 'Arial Black', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
+      Tab Scribe
+    </h1>
+    <p style="font-size: 0.9em; color: #555;">V0.3.0</p>
+  </header>
 
   <div>
-    <button onclick="addColumn()">➕ Column</button>
-    <button onclick="removeColumn()">➖ Column</button>
-    <button onclick="toggleDarkMode()">🌓 Toggle Dark Mode</button>
+    <button onclick="addColumn()">➕ Column (Beat)</button>
+    <button onclick="removeColumn()">➖ Column (Beat)</button>
+    <button onclick="toggleDarkMode()">🌘 Dark Mode</button>
   </div>
 
   <div id="tabGrid" class="tab-grid"></div>
 
   <div>
     <input type="text" id="sectionLabel" placeholder="Section Marker (e.g., Chorus)" class="section-input" />
-    <button onclick="exportTab()">Export Measure</button>
+    <button onclick="exportTab()">Post Measure</button>
     <button onclick="clearGrid()">Clear Grid</button>
   </div>
 
@@ -99,6 +136,24 @@
 
   <h3>Full Tab:</h3>
   <div id="tabOutput" class="output"></div>
+
+  <!-- Help Modal -->
+  <div id="helpModal">
+    <h2>How to Use Tab Scribe</h2>
+    <ol>
+      <li>Click "➕ Column" to add a beat (set of tab columns).</li>
+      <li>Type the fret numbers in the cells for each string.</li>
+      <li>Click "➖ Column" to remove a column (beat).</li>
+      <li>Use "Section Marker" to label your section (e.g., Chorus).</li>
+      <li>Click "Post Measure" to add it to the full tab below.</li>
+      <li>Use "Clear Grid" to reset your current measure.</li>
+      <li>Enter a tab name and click "💾 Save Tab" to store it.</li>
+      <li>Use the dropdown to reload saved tabs.</li>
+      <li>Click "⬇️ Export to .txt" to download your full tab.</li>
+      <li>Toggle Dark Mode for late-night sessions. 🎸</li>
+    </ol>
+    <button onclick="document.getElementById('helpModal').style.display='none'">Close</button>
+  </div>
 
   <script>
     const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
@@ -229,6 +284,10 @@
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
     }
+
+    document.getElementById("helpBtn").onclick = function () {
+      document.getElementById("helpModal").style.display = "block";
+    };
 
     createGrid();
     loadSavedTabList();
