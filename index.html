@@ -19,7 +19,7 @@
       font-family: 'Oswald', sans-serif;
       padding: 20px;
       background: #f5f5f5;
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.4s, color 0.4s;
     }
     .dark-mode {
       background: #222;
@@ -117,7 +117,7 @@
     <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
-    <p style="font-size: 0.9em; color: #555;">V0.3.1</p>
+    <p style="font-size: 0.9em; color: #555;">V0.4.1</p>
   </header>
 
   <div>
@@ -125,7 +125,9 @@
     <button onclick="removeColumn()">➖ Column (Beat)</button>
     <button onclick="toggleDarkMode()">🌘 Dark Mode</button>
   </div>
-
+<div>
+  <textarea id="tabComments" placeholder="Notes" style="width:100%; height:100px; margin-top:10px; font-family:monospace; font-size:14px;"></textarea>
+</div>
   <div id="tabGrid" class="tab-grid"></div>
 
   <div>
@@ -151,8 +153,8 @@
     <h2>How to Use Tab Scribe</h2>
     <ol>
       <li>Click "➕ Column" to add a beat (set of tab columns).</li>
-      <li>Type the fret numbers in the cells for each string.</li>
       <li>Click "➖ Column" to remove a column (beat).</li>
+      <li>Type the fret numbers in the cells for each string.</li>
       <li>Use "Section Marker" to label your section (e.g., Chorus).</li>
       <li>Click "Post Measure" to add it to the full tab below.</li>
       <li>Use "Clear Grid" to reset your current measure.</li>
@@ -167,13 +169,25 @@
   <!-- About Modal -->
   <div id="aboutModal">
     <h2>About Tab Scribe</h2>
-    <p><strong>Tab Scribe</strong> is a lightweight, browser-based guitar tab writing tool designed for intuitive composition, editing, and export. It lets you build tablature beat by beat, mark sections, and write freely — without being locked into a full DAW or notation software. Perfect for sketching riffs, saving quick ideas, or sharing with bandmates.</p>
-    <p>More features — like note labeling, lyric/chord overlays, and PDF export — are coming soon. Built for simplicity, speed, and players who just want to write.</p>
+    <p><strong>Tab Scribe</strong> is a lightweight guitar tab writing tool designed for intuitive composition, editing, and export for songwriters. It lets you build tablature beat by beat, mark sections, and write freely — without being locked into a full DAW or notation software. Perfect for sketching riffs, saving quick ideas, or sharing with bandmates. Built for simplicity, speed, and players who just want to write.</p>
+    <p>More features — like note labeling, lyric/chord overlays, and PDF export — are coming soon.</p>
+    <hr style="margin: 20px 0;">
+<h3>Version History</h3>
+<ul style="font-family: monospace; font-size: 14px; line-height: 1.5;">
+  <li><strong>V 0.1.0</strong> – Initial prototype with grid-based tab entry and measure export.</li>
+  <li><strong>V 0.2.0</strong> – Added named tab saving and reloading with localStorage support.</li>
+  <li><strong>V 0.2.5</strong> – Enabled tab export as <code>.txt</code> file with custom filename.</li>
+  <li><strong>V 0.3.0</strong> – Introduced dark mode toggle and UI cleanup.</li>
+  <li><strong>V 0.3.1</strong> – Switched app name to <em>Tab Scribe</em>; updated font and header styling.</li>
+  <li><strong>V 0.3.2</strong> – Added help modal (<code>❓</code>) with step-by-step instructions.</li>
+  <li><strong>V 0.3.3</strong> – Added About modal (<code>ℹ️</code>) with app summary; fixed string label layout (now on left).</li>
+  <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
+</ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
 
   <script>
-    const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
+    const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     let columns = 8;
 
     const grid = document.getElementById('tabGrid');
@@ -258,23 +272,39 @@
       }
     }
 
-    function saveNamedTab() {
-      const name = document.getElementById('tabName').value.trim();
-      if (!name) return alert("Name your tab first!");
-      localStorage.setItem(`tabby_${name}`, fullTab);
-      loadSavedTabList();
-      alert(`Tab "${name}" saved.`);
-    }
+function saveNamedTab() {
+  const name = document.getElementById('tabName').value.trim();
+  const comments = document.getElementById('tabComments').value;
+  if (!name) return alert("Name your tab first!");
 
-    function loadNamedTab() {
-      const name = savedTabsDropdown.value;
-      if (!name) return;
-      const saved = localStorage.getItem(`tabby_${name}`);
-      if (saved) {
-        fullTab = saved;
-        outputBox.innerText = fullTab;
-      }
+  const tabData = {
+    content: fullTab,
+    notes: comments
+  };
+
+  localStorage.setItem(`tabby_${name}`, JSON.stringify(tabData));
+  loadSavedTabList();
+  alert(`Tab "${name}" saved.`);
+}
+
+function loadNamedTab() {
+  const name = savedTabsDropdown.value;
+  if (!name) return;
+  const saved = localStorage.getItem(`tabby_${name}`);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      fullTab = parsed.content;
+      outputBox.innerText = fullTab;
+      document.getElementById('tabComments').value = parsed.notes || '';
+    } catch (e) {
+      // Backward compatibility for older saves
+      fullTab = saved;
+      outputBox.innerText = fullTab;
+      document.getElementById('tabComments').value = '';
     }
+  }
+}
 
     function loadSavedTabList() {
       savedTabsDropdown.innerHTML = '<option value="">-- Load Tab --</option>';
@@ -289,16 +319,17 @@
       }
     }
 
-    function exportToFile() {
-      const blob = new Blob([fullTab], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const name = document.getElementById('tabName').value || 'tabby-tab';
-      a.download = `${name}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+  function exportToFile() {
+  const comments = document.getElementById('tabComments').value;
+  const blob = new Blob([comments + '\n\n' + fullTab], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const name = document.getElementById('tabName').value || 'tabby-tab';
+  a.download = `${name}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
