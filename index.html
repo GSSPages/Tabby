@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <meta name="theme-color" content="#222222">
@@ -70,17 +70,24 @@
       margin-top: 10px;
     }
 
-    /* Help modal styling */
-    #helpBtn {
+    /* Icon Buttons */
+    #helpBtn, #aboutBtn {
       position: absolute;
       top: 20px;
-      right: 20px;
       font-size: 1.2em;
       background: none;
       border: none;
       cursor: pointer;
     }
-    #helpModal {
+    #helpBtn {
+      right: 20px;
+    }
+    #aboutBtn {
+      right: 60px;
+    }
+
+    /* Modal Styling */
+    #helpModal, #aboutModal {
       display: none;
       position: fixed;
       top: 10%;
@@ -94,7 +101,7 @@
       box-shadow: 0 0 15px rgba(0,0,0,0.3);
       z-index: 1000;
     }
-    .dark-mode #helpModal {
+    .dark-mode #helpModal, .dark-mode #aboutModal {
       background: #333;
       color: #eee;
       border-color: #666;
@@ -103,10 +110,11 @@
 </head>
 <body>
 
+  <button id="aboutBtn">ℹ️</button>
   <button id="helpBtn">❓</button>
 
   <header style="text-align: center; margin-top: 20px;">
-    <h1 style="font-family: 'Arial Black', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
+    <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
     <p style="font-size: 0.9em; color: #555;">V0.3.1</p>
@@ -156,6 +164,14 @@
     <button onclick="document.getElementById('helpModal').style.display='none'">Close</button>
   </div>
 
+  <!-- About Modal -->
+  <div id="aboutModal">
+    <h2>About Tab Scribe</h2>
+    <p><strong>Tab Scribe</strong> is a lightweight, browser-based guitar tab writing tool designed for intuitive composition, editing, and export. It lets you build tablature beat by beat, mark sections, and write freely — without being locked into a full DAW or notation software. Perfect for sketching riffs, saving quick ideas, or sharing with bandmates.</p>
+    <p>More features — like note labeling, lyric/chord overlays, and PDF export — are coming soon. Built for simplicity, speed, and players who just want to write.</p>
+    <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
+  </div>
+
   <script>
     const strings = ['e', 'B', 'G', 'D', 'A', 'E'];
     let columns = 8;
@@ -177,7 +193,8 @@
         for (let col = 0; col <= columns; col++) {
           const cell = document.createElement('div');
           cell.classList.add('cell');
-          if (col === columns) {
+
+          if (col === 0) {
             cell.innerText = strings[row];
             cell.classList.add('string-label');
           } else {
@@ -187,9 +204,10 @@
                 cell.innerText = cell.innerText.slice(0, 2);
               }
             });
+            rowCells.push(cell);
           }
+
           grid.appendChild(cell);
-          if (col < columns) rowCells.push(cell);
         }
         cells.push(rowCells);
       }
@@ -288,6 +306,9 @@
 
     document.getElementById("helpBtn").onclick = function () {
       document.getElementById("helpModal").style.display = "block";
+    };
+    document.getElementById("aboutBtn").onclick = function () {
+      document.getElementById("aboutModal").style.display = "block";
     };
 
     createGrid();
