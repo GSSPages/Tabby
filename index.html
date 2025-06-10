@@ -15,6 +15,9 @@
   <meta charset="UTF-8">
   <title>Tab Scribe</title>
   <style>
+  .edit-mode-output {
+  color: red !important;
+}
     body {
       font-family: 'Oswald', sans-serif;
       padding: 20px;
@@ -117,7 +120,7 @@
     <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
-    <p style="font-size: 0.9em; color: #555;">V0.4.1</p>
+    <p style="font-size: 0.9em; color: #555;">V 0.5.0</p>
   </header>
 
   <div>
@@ -144,6 +147,8 @@
       <option value="">-- Load Saved Tab --</option>
     </select>
   </div>
+  
+  <button id="editModeBtn" onclick="toggleEditMode()">✏️ Edit Mode: OFF</button>
 
   <h3>Full Tab:</h3>
   <div id="tabOutput" class="output"></div>
@@ -182,6 +187,7 @@
   <li><strong>V 0.3.2</strong> – Added help modal (<code>❓</code>) with step-by-step instructions.</li>
   <li><strong>V 0.3.3</strong> – Added About modal (<code>ℹ️</code>) with app summary; fixed string label layout (now on left).</li>
   <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
+  <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable (<code>📝</code>) in the grid, with red text to indicate editing is active.</li>
 </ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
@@ -196,6 +202,43 @@
 
     let cells = [];
     let fullTab = '';
+    
+    let editMode = false;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editModeBtn').innerText = `✏️ Edit Mode: ${editMode ? 'ON' : 'OFF'}`;
+  outputBox.classList.toggle('edit-mode-output', editMode);
+  if (editMode) {
+    alert("Edit Mode enabled: Select a saved tab from the dropdown to re-edit.");
+  }
+}
+
+// Parses tab text and re-populates the grid
+function populateGridFromTab(tabText) {
+  const lines = tabText.trim().split('\n').filter(line => line && line.includes('|'));
+  if (lines.length !== strings.length) {
+    alert("Unable to edit: Tab formatting is incompatible with current layout.");
+    return;
+  }
+
+  // Clear the grid
+  clearGrid();
+
+  // Determine column count from first line
+  const sampleLine = lines[0].split('|')[1] || '';
+  columns = Math.floor(sampleLine.length / 2);
+  createGrid();
+
+  // Fill in values
+  for (let row = 0; row < strings.length; row++) {
+    const line = lines[row].split('|')[1] || '';
+    for (let col = 0; col < columns; col++) {
+      const cellValue = line.substring(col * 2, col * 2 + 2).replace(/-/g, '').trim();
+      cells[row][col].innerText = cellValue;
+    }
+  }
+}
 
     function createGrid() {
       grid.innerHTML = '';
@@ -297,11 +340,17 @@ function loadNamedTab() {
       fullTab = parsed.content;
       outputBox.innerText = fullTab;
       document.getElementById('tabComments').value = parsed.notes || '';
+      if (editMode) {
+        populateGridFromTab(parsed.content);
+      }
     } catch (e) {
-      // Backward compatibility for older saves
+      // Fallback for older plain-text saves
       fullTab = saved;
       outputBox.innerText = fullTab;
       document.getElementById('tabComments').value = '';
+      if (editMode) {
+        populateGridFromTab(saved);
+      }
     }
   }
 }
