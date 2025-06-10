@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.png">
   <meta name="theme-color" content="#222222">
@@ -15,7 +16,7 @@
   <title>Tab Scribe</title>
   <style>
     body {
-      font-family: monospace;
+      font-family: 'Anton', sans-serif;
       padding: 20px;
       background: #f5f5f5;
       transition: background 0.3s, color 0.3s;
@@ -258,7 +259,7 @@
     }
 
     function loadSavedTabList() {
-      savedTabsDropdown.innerHTML = '<option value="">-- Load Saved Tab --</option>';
+      savedTabsDropdown.innerHTML = '<option value="">-- Load Tab --</option>';
       for (let key in localStorage) {
         if (key.startsWith('tabby_')) {
           const name = key.replace('tabby_', '');
