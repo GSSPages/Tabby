@@ -19,7 +19,7 @@
   color: red !important;
 }
     body {
-      font-family: 'Figtree', sans-serif;
+      font-family: 'Permanent Marker', sans-serif;
       padding: 20px;
       background: #f5f5f5;
       transition: background 0.4s, color 0.4s;
@@ -120,7 +120,7 @@
     <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
-    <p style="font-size: 0.9em; color: #555;">V 0.5.1</p>
+    <p style="font-size: 0.9em; color: #555;">V 0.5.2</p>
   </header>
 
   <div>
@@ -153,7 +153,7 @@
 </div>
 
   <h3>Full Tab:</h3>
-  <div id="tabOutput" class="output" contenteditable="true"></div>
+  <div id="tabOutput" class="output"></div>
   
   <button onclick="saveEditedFullTab()">💾 Save Full Tab</button>
 
@@ -191,7 +191,8 @@
   <li><strong>V 0.3.2</strong> – Added help modal (<code>❓</code>) with step-by-step instructions.</li>
   <li><strong>V 0.3.3</strong> – Added About modal (<code>ℹ️</code>) with app summary; fixed string label layout (now on left).</li>
   <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
-  <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable in the "Full Tab" output (<code>📝</code>), with red text to indicate editing is active.</li>
+  <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable in the "Full Tab" output (<code>✏️</code>), with red text to indicate editing is active.</li>
+  <li><strong>V 0.5.2</strong> – Fixed errors with edits mode. Edit mode must be enabled to make edits.</li>
 </ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
@@ -213,6 +214,7 @@ function toggleEditMode() {
   editMode = !editMode;
   document.getElementById('editModeBtn').innerText = `✏️ Edit Mode: ${editMode ? 'ON' : 'OFF'}`;
   outputBox.classList.toggle('edit-mode-output', editMode);
+  outputBox.contentEditable = editMode;
   if (editMode) {
     alert("Edit Mode enabled: Select a saved tab from the dropdown to re-edit.");
   }
