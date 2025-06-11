@@ -123,7 +123,7 @@
     <h1 style="font-family: 'Permanent Marker', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
-    <p style="font-size: 0.9em; color: #555;">V 0.5.2</p>
+    <p style="font-size: 0.9em; color: #555;">V 0.6.1</p>
   </header>
 
   <div>
@@ -147,6 +147,7 @@
     <select id="savedTabs" onchange="loadNamedTab()">
       <option value="">-- Load Saved Tab --</option>
     </select>
+    <button onclick="newProject()">🆕 New Project</button>
     <button onclick="deleteNamedTab()">🗑 Delete Tab</button>
   </div>
   
@@ -198,6 +199,7 @@
   <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable in the "Full Tab" output (<code>✏️</code>), with red text to indicate editing is active.</li>
   <li><strong>V 0.5.2</strong> – Fixed errors with edits mode. Edit mode must be enabled to make edits.</li>
   <li><strong>V 0.6.0</strong> – Added “Delete Tab” button for removing saved tabs. Loaded tab names now auto-fill the Tab Name field to streamline saving updates.</li>
+  <li><strong>V 0.6.1</strong> – Restored the “New Project” button and dropdown option to start a fresh tab. Clears tab name, notes, grid, and output field.</li>
 </ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
@@ -313,6 +315,14 @@ function populateGridFromTab(tabText) {
         }
       }
     }
+    
+    function newProject() {
+  fullTab = '';
+  document.getElementById('tabName').value = '';
+  document.getElementById('tabComments').value = '';
+  outputBox.innerText = '';
+  clearGrid();
+}
 
     function addColumn() {
       columns++;
