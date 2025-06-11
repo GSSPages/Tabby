@@ -22,7 +22,7 @@
   color: red !important;
 }
     body {
-      font-family: 'Anton', sans-serif;
+      font-family: 'Monospace', sans-serif;
       padding: 20px;
       background: #f5f5f5;
       transition: background 0.4s, color 0.4s;
@@ -147,6 +147,7 @@
     <select id="savedTabs" onchange="loadNamedTab()">
       <option value="">-- Load Saved Tab --</option>
     </select>
+    <button onclick="deleteNamedTab()">🗑 Delete Tab</button>
   </div>
   
   <button id="editModeBtn" onclick="toggleEditMode()">✏️ Edit Mode: OFF</button>
@@ -196,6 +197,7 @@
   <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
   <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable in the "Full Tab" output (<code>✏️</code>), with red text to indicate editing is active.</li>
   <li><strong>V 0.5.2</strong> – Fixed errors with edits mode. Edit mode must be enabled to make edits.</li>
+  <li><strong>V 0.6.0</strong> – Added “Delete Tab” button for removing saved tabs. Loaded tab names now auto-fill the Tab Name field to streamline saving updates.</li>
 </ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
@@ -339,27 +341,47 @@ function saveNamedTab() {
   alert(`Tab "${name}" saved.`);
 }
 
+function deleteNamedTab() {
+  const name = savedTabsDropdown.value;
+  if (!name) return alert("Select a tab to delete.");
+  const confirmDelete = confirm(`Are you sure you want to delete "${name}"?`);
+  if (confirmDelete) {
+    localStorage.removeItem(`tabby_${name}`);
+    loadSavedTabList();
+    document.getElementById('tabName').value = '';
+    outputBox.innerText = '';
+    document.getElementById('tabComments').value = '';
+    alert(`Deleted tab "${name}".`);
+  }
+}
+
 function loadNamedTab() {
   const name = savedTabsDropdown.value;
+  if (name === "__new") {
+    newProject();
+    return;
+  }
   if (!name) return;
+
   const saved = localStorage.getItem(`tabby_${name}`);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      fullTab = parsed.content;
-      outputBox.innerText = fullTab;
-      document.getElementById('tabComments').value = parsed.notes || '';
-      if (editMode) {
-        populateGridFromTab(parsed.content);
-      }
-    } catch (e) {
-      // Fallback for older plain-text saves
-      fullTab = saved;
-      outputBox.innerText = fullTab;
-      document.getElementById('tabComments').value = '';
-      if (editMode) {
-        populateGridFromTab(saved);
-      }
+  if (!saved) return;
+
+  document.getElementById('tabName').value = name; // ✅ Set tab name field
+
+  try {
+    const parsed = JSON.parse(saved);
+    fullTab = parsed.content;
+    outputBox.innerText = fullTab;
+    document.getElementById('tabComments').value = parsed.notes || '';
+    if (editMode) {
+      populateGridFromTab(parsed.content);
+    }
+  } catch (e) {
+    fullTab = saved;
+    outputBox.innerText = fullTab;
+    document.getElementById('tabComments').value = '';
+    if (editMode) {
+      populateGridFromTab(saved);
     }
   }
 }
