@@ -305,6 +305,7 @@ function populateGridFromTab(tabText) {
       fullTab += measure + '\n';
       outputBox.innerText = fullTab;
       document.getElementById('sectionLabel').value = '';
+      updateSectionList();
     }
 
     function clearGrid() {
@@ -420,11 +421,11 @@ function updateSectionList() {
   const sectionDropdown = document.getElementById('sectionSelect');
   sectionDropdown.innerHTML = '<option value="">-- Select Section to Edit --</option>';
 
-  const matches = [...fullTab.matchAll(/\[(.*?)\]/g)];
+  const matches = [...fullTab.matchAll(/^\[(.+?)\]/gm)];
   const seen = new Set();
 
   matches.forEach(match => {
-    const section = match[1];
+    const section = match[1].trim();
     if (!seen.has(section)) {
       const opt = document.createElement('option');
       opt.value = section;
