@@ -421,19 +421,23 @@ function updateSectionList() {
   const sectionDropdown = document.getElementById('sectionSelect');
   sectionDropdown.innerHTML = '<option value="">-- Select Section to Edit --</option>';
 
-  const matches = [...fullTab.matchAll(/^\[(.+?)\]/gm)];
-  const seen = new Set();
+  // Match [SECTION] at the start of a line, regardless of case
+  const sectionRegex = /^\[(.+?)\]/gm;
+  const matches = fullTab.match(sectionRegex);
 
-  matches.forEach(match => {
-    const section = match[1].trim();
-    if (!seen.has(section)) {
-      const opt = document.createElement('option');
-      opt.value = section;
-      opt.textContent = section;
-      sectionDropdown.appendChild(opt);
-      seen.add(section);
-    }
-  });
+  if (matches) {
+    const seen = new Set();
+    matches.forEach(raw => {
+      const clean = raw.replace(/[\[\]]/g, '').trim(); // strip brackets
+      if (!seen.has(clean)) {
+        const opt = document.createElement('option');
+        opt.value = clean;
+        opt.textContent = clean;
+        sectionDropdown.appendChild(opt);
+        seen.add(clean);
+      }
+    });
+  }
 }
 
 function loadSectionIntoGrid() {
