@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <meta name="theme-color" content="#222222">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log("Service Worker registered!", reg))
+        .catch(err => console.error("Service Worker failed", err));
+    }
+  </script>
+  <meta charset="UTF-8">
+  <title>Tab Scribe</title>
+  <style>
+  .edit-mode-output {
+  color: red !important;
+}
+    body {
+      font-family: 'Oswald', sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      transition: background 0.4s, color 0.4s;
+    }
+    .dark-mode {
+      background: #222;
+      color: #eee;
+    }
+    .tab-grid {
+      display: grid;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    .cell {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+      background: white;
+      font-size: 16px;
+    }
+    .dark-mode .cell {
+      background: #444;
+      color: #fff;
+      border-color: #888;
+    }
+    .string-label {
+      font-weight: bold;
+      text-align: center;
+      border: none;
+    }
+    .output {
+      white-space: pre;
+      background: #fff;
+      border: 1px solid #aaa;
+      padding: 10px;
+      font-family: monospace;
+    }
+    .dark-mode .output {
+      background: #333;
+      color: #eee;
+      border-color: #666;
+    }
+    button, input, select {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px 5px 5px 0;
+    }
+    .section-input {
+      margin-top: 10px;
+    }
+
+    /* Icon Buttons */
+    #helpBtn, #aboutBtn {
+      position: absolute;
+      top: 20px;
+      font-size: 1.2em;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    #helpBtn {
+      right: 20px;
+    }
+    #aboutBtn {
+      right: 60px;
+    }
+
+    /* Modal Styling */
+    #helpModal, #aboutModal {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 600px;
+      background: white;
+      padding: 20px;
+      border: 1px solid #aaa;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .dark-mode #helpModal, .dark-mode #aboutModal {
+      background: #333;
+      color: #eee;
+      border-color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="aboutBtn">ℹ️</button>
+  <button id="helpBtn">❓</button>
+
+  <header style="text-align: center; margin-top: 20px;">
+    <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
+      Tab Scribe
+    </h1>
+    <p style="font-size: 0.9em; color: #555;">V 0.5.0</p>
+  </header>
+
+  <div>
+    <button onclick="addColumn()">➕ Column (Beat)</button>
+    <button onclick="removeColumn()">➖ Column (Beat)</button>
+    <button onclick="toggleDarkMode()">🌘 Dark Mode</button>
+  </div>
+<div>
+  <textarea id="tabComments" placeholder="Notes" style="width:100%; height:100px; margin-top:10px; font-family:monospace; font-size:14px;"></textarea>
+</div>
+  <div id="tabGrid" class="tab-grid"></div>
+
+  <div>
+    <input type="text" id="sectionLabel" placeholder="Section Marker (e.g., Chorus)" class="section-input" />
+    <button onclick="exportTab()">Post Measure</button>
+    <button onclick="clearGrid()">Clear Grid</button>
+  </div>
+
+  <div>
+    <input type="text" id="tabName" placeholder="Tab Name" />
+    <button onclick="saveNamedTab()">💾 Save Tab</button>
+    <button onclick="exportToFile()">⬇️ Export to .txt</button>
+    <select id="savedTabs" onchange="loadNamedTab()">
+      <option value="">-- Load Saved Tab --</option>
+    </select>
+  </div>
+  
+  <button id="editModeBtn" onclick="toggleEditMode()">✏️ Edit Mode: OFF</button>
+
+  <h3>Full Tab:</h3>
+  <div id="tabOutput" class="output"></div>
+
+  <!-- Help Modal -->
+  <div id="helpModal">
+    <h2>How to Use Tab Scribe</h2>
+    <ol>
+      <li>Click "➕ Column" to add a beat (set of tab columns).</li>
+      <li>Click "➖ Column" to remove a column (beat).</li>
+      <li>Type the fret numbers in the cells for each string.</li>
+      <li>Use "Section Marker" to label your section (e.g., Chorus).</li>
+      <li>Click "Post Measure" to add it to the full tab below.</li>
+      <li>Use "Clear Grid" to reset your current measure.</li>
+      <li>Enter a tab name and click "💾 Save Tab" to store it.</li>
+      <li>Use the dropdown to reload saved tabs.</li>
+      <li>Click "⬇️ Export to .txt" to download your full tab.</li>
+      <li>Toggle Dark Mode for late-night sessions. 🎸</li>
+    </ol>
+    <button onclick="document.getElementById('helpModal').style.display='none'">Close</button>
+  </div>
+
+  <!-- About Modal -->
+  <div id="aboutModal">
+    <h2>About Tab Scribe</h2>
+    <p><strong>Tab Scribe</strong> is a lightweight guitar tab writing tool designed for intuitive composition, editing, and export for songwriters. It lets you build tablature beat by beat, mark sections, and write freely — without being locked into a full DAW or notation software. Perfect for sketching riffs, saving quick ideas, or sharing with bandmates. Built for simplicity, speed, and players who just want to write.</p>
+    <p>More features — like note labeling, lyric/chord overlays, and PDF export — are coming soon.</p>
+    <hr style="margin: 20px 0;">
+<h3>Version History</h3>
+<ul style="font-family: monospace; font-size: 14px; line-height: 1.5;">
+  <li><strong>V 0.1.0</strong> – Initial prototype with grid-based tab entry and measure export.</li>
+  <li><strong>V 0.2.0</strong> – Added named tab saving and reloading with localStorage support.</li>
+  <li><strong>V 0.2.5</strong> – Enabled tab export as <code>.txt</code> file with custom filename.</li>
+  <li><strong>V 0.3.0</strong> – Introduced dark mode toggle and UI cleanup.</li>
+  <li><strong>V 0.3.1</strong> – Switched app name to <em>Tab Scribe</em>; updated font and header styling.</li>
+  <li><strong>V 0.3.2</strong> – Added help modal (<code>❓</code>) with step-by-step instructions.</li>
+  <li><strong>V 0.3.3</strong> – Added About modal (<code>ℹ️</code>) with app summary; fixed string label layout (now on left).</li>
+  <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
+  <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable (<code>📝</code>) in the grid, with red text to indicate editing is active.</li>
+</ul>
+    <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
+  </div>
+
+  <script>
+    const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
+    let columns = 8;
+
+    const grid = document.getElementById('tabGrid');
+    const outputBox = document.getElementById('tabOutput');
+    const savedTabsDropdown = document.getElementById('savedTabs');
+
+    let cells = [];
+    let fullTab = '';
+    
+    let editMode = false;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editModeBtn').innerText = `✏️ Edit Mode: ${editMode ? 'ON' : 'OFF'}`;
+  outputBox.classList.toggle('edit-mode-output', editMode);
+  if (editMode) {
+    alert("Edit Mode enabled: Select a saved tab from the dropdown to re-edit.");
+  }
+}
+
+// Parses tab text and re-populates the grid
+function populateGridFromTab(tabText) {
+  const lines = tabText.trim().split('\n').filter(line => line && line.includes('|'));
+  if (lines.length !== strings.length) {
+    alert("Unable to edit: Tab formatting is incompatible with current layout.");
+    return;
+  }
+
+  // Clear the grid
+  clearGrid();
+
+  // Determine column count from first line
+  const sampleLine = lines[0].split('|')[1] || '';
+  columns = Math.floor(sampleLine.length / 2);
+  createGrid();
+
+  // Fill in values
+  for (let row = 0; row < strings.length; row++) {
+    const line = lines[row].split('|')[1] || '';
+    for (let col = 0; col < columns; col++) {
+      const cellValue = line.substring(col * 2, col * 2 + 2).replace(/-/g, '').trim();
+      cells[row][col].innerText = cellValue;
+    }
+  }
+}
+
+    function createGrid() {
+      grid.innerHTML = '';
+      grid.style.gridTemplateColumns = `repeat(${columns + 1}, auto)`;
+      cells = [];
+
+      for (let row = 0; row < strings.length; row++) {
+        const rowCells = [];
+        for (let col = 0; col <= columns; col++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+
+          if (col === 0) {
+            cell.innerText = strings[row];
+            cell.classList.add('string-label');
+          } else {
+            cell.contentEditable = true;
+            cell.addEventListener('input', () => {
+              if (cell.innerText.length > 2) {
+                cell.innerText = cell.innerText.slice(0, 2);
+              }
+            });
+            rowCells.push(cell);
+          }
+
+          grid.appendChild(cell);
+        }
+        cells.push(rowCells);
+      }
+    }
+
+    function exportTab() {
+      const section = document.getElementById('sectionLabel').value.trim();
+      let measure = section ? `[${section.toUpperCase()}]\n` : '';
+
+      for (let row = 0; row < strings.length; row++) {
+        let line = strings[row] + '|';
+        for (let col = 0; col < columns; col++) {
+          const val = cells[row][col].innerText.trim();
+          if (val === '') {
+            line += '--';
+          } else if (val.length === 1) {
+            line += '-' + val;
+          } else {
+            line += val;
+          }
+        }
+        line += '|';
+        measure += line + '\n';
+      }
+
+      fullTab += measure + '\n';
+      outputBox.innerText = fullTab;
+      document.getElementById('sectionLabel').value = '';
+    }
+
+    function clearGrid() {
+      for (let row of cells) {
+        for (let cell of row) {
+          cell.innerText = '';
+        }
+      }
+    }
+
+    function addColumn() {
+      columns++;
+      createGrid();
+    }
+
+    function removeColumn() {
+      if (columns > 1) {
+        columns--;
+        createGrid();
+      }
+    }
+
+function saveNamedTab() {
+  const name = document.getElementById('tabName').value.trim();
+  const comments = document.getElementById('tabComments').value;
+  if (!name) return alert("Name your tab first!");
+
+  const tabData = {
+    content: fullTab,
+    notes: comments
+  };
+
+  localStorage.setItem(`tabby_${name}`, JSON.stringify(tabData));
+  loadSavedTabList();
+  alert(`Tab "${name}" saved.`);
+}
+
+function loadNamedTab() {
+  const name = savedTabsDropdown.value;
+  if (!name) return;
+  const saved = localStorage.getItem(`tabby_${name}`);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      fullTab = parsed.content;
+      outputBox.innerText = fullTab;
+      document.getElementById('tabComments').value = parsed.notes || '';
+      if (editMode) {
+        populateGridFromTab(parsed.content);
+      }
+    } catch (e) {
+      // Fallback for older plain-text saves
+      fullTab = saved;
+      outputBox.innerText = fullTab;
+      document.getElementById('tabComments').value = '';
+      if (editMode) {
+        populateGridFromTab(saved);
+      }
+    }
+  }
+}
+
+    function loadSavedTabList() {
+      savedTabsDropdown.innerHTML = '<option value="">-- Load Tab --</option>';
+      for (let key in localStorage) {
+        if (key.startsWith('tabby_')) {
+          const name = key.replace('tabby_', '');
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          savedTabsDropdown.appendChild(option);
+        }
+      }
+    }
+
+  function exportToFile() {
+  const comments = document.getElementById('tabComments').value;
+  const blob = new Blob([comments + '\n\n' + fullTab], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const name = document.getElementById('tabName').value || 'tabby-tab';
+  a.download = `${name}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    document.getElementById("helpBtn").onclick = function () {
+      document.getElementById("helpModal").style.display = "block";
+    };
+    document.getElementById("aboutBtn").onclick = function () {
+      document.getElementById("aboutModal").style.display = "block";
+    };
+
+    createGrid();
+    loadSavedTabList();
+  </script>
+</body>
+</html>
