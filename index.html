@@ -19,7 +19,7 @@
   color: red !important;
 }
     body {
-      font-family: 'Oswald', sans-serif;
+      font-family: 'Figtree', sans-serif;
       padding: 20px;
       background: #f5f5f5;
       transition: background 0.4s, color 0.4s;
@@ -120,7 +120,7 @@
     <h1 style="font-family: 'Anton', sans-serif; font-size: 2.5em; font-weight: bold; letter-spacing: -1px;">
       Tab Scribe
     </h1>
-    <p style="font-size: 0.9em; color: #555;">V 0.5.0</p>
+    <p style="font-size: 0.9em; color: #555;">V 0.5.2</p>
   </header>
 
   <div>
@@ -153,8 +153,15 @@
   
   <button id="editModeBtn" onclick="toggleEditMode()">✏️ Edit Mode: OFF</button>
 
+<select id="sectionSelect">
+  <option value="">-- Select Section to Edit --</option>
+</select>
+<button onclick="loadSectionIntoGrid()">↩️ Load Section</button>
+
   <h3>Full Tab:</h3>
-  <div id="tabOutput" class="output"></div>
+  <div id="tabOutput" class="output" contenteditable="true"></div>
+  
+  <button onclick="saveEditedFullTab()">💾 Save Full Tab</button>
 
   <!-- Help Modal -->
   <div id="helpModal">
@@ -192,6 +199,7 @@
   <li><strong>V 0.4.0</strong> – Add persistent comment section tied to each saved tab; notes appear in <code>.txt</code> export header.</li>
   <li><strong>V 0.5.0</strong> – Introduced Edit Mode: allows reloading and modifying previously saved tabs. Loaded content is editable (<code>📝</code>) in the grid, with red text to indicate editing is active.</li>
   <li><strong>V 0.5.1</strong> – Added “New Project” button and dropdown option; updated tab loader to support it. Moved the notes section lower in the interface for improved layout flow.</li>
+  <li><strong>V 0.5.2</strong> – Fixed errors with editing tabs. Made full tab output editable. Added “Save Full Tab” button and section selector to reload specific tab parts (e.g., Intro, Verse) back into the grid for detailed editing.</li>
 </ul>
     <button onclick="document.getElementById('aboutModal').style.display='none'">Close</button>
   </div>
@@ -401,6 +409,55 @@ function loadSavedTabList() {
   a.download = `${name}.txt`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function saveEditedFullTab() {
+  fullTab = outputBox.innerText;
+  alert("Full tab updated from editable content.");
+}
+
+function updateSectionList() {
+  const sectionDropdown = document.getElementById('sectionSelect');
+  sectionDropdown.innerHTML = '<option value="">-- Select Section to Edit --</option>';
+
+  const matches = [...fullTab.matchAll(/\[(.*?)\]/g)];
+  const seen = new Set();
+
+  matches.forEach(match => {
+    const section = match[1];
+    if (!seen.has(section)) {
+      const opt = document.createElement('option');
+      opt.value = section;
+      opt.textContent = section;
+      sectionDropdown.appendChild(opt);
+      seen.add(section);
+    }
+  });
+}
+
+function loadSectionIntoGrid() {
+  const section = document.getElementById('sectionSelect').value;
+  if (!section) return alert("Choose a section to load.");
+
+  const regex = new RegExp(`\$begin:math:display$${section}\\$end:math:display$\\n([eBGDAE]\\|.*?\\|\\n){6}`, 'gm');
+  const match = fullTab.match(regex);
+
+  if (!match) return alert("Section not found.");
+
+  const lines = match[0].split('\n').slice(1); // skip section label
+
+  columns = Math.floor((lines[0].length - 3) / 2); // rough calc
+  createGrid();
+
+  for (let row = 0; row < strings.length; row++) {
+    const content = lines[row].split('|')[1] || '';
+    for (let col = 0; col < columns; col++) {
+      const val = content.substring(col * 2, col * 2 + 2).replace(/-/g, '').trim();
+      cells[row][col].innerText = val;
+    }
+  }
+
+  alert(`Loaded "${section}" into grid.`);
 }
 
     function toggleDarkMode() {
